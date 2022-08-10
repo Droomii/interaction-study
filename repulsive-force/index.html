@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>꾸덕꾸덕</title>
+</head>
+<body>
+<div style="text-align: center">
+    <canvas width="600" height="600" id="canvas"></canvas>
+</div>
+<div style="text-align: center; font-size: 32px">
+    꾸덕꾸덕~~~
+</div>
+</body>
+<script type="text/javascript">
+    const randInt = (n) => Math.floor(Math.random() * n);
+
+    class Dot {
+        color = `rgb(${50 + randInt(200)}, ${50 + randInt(200)}, ${50 + randInt(200)})`;
+        x;
+        y;
+        accelX = 0;
+        accelY = 0;
+        static repulsePower = 20000;
+
+        constructor(canvas, x, y) {
+            const deg = Math.PI * Math.random() * 2;
+            const dist = Math.sqrt(Math.random()) * 250;
+            this.initX = this.x = x ?? (300 + Math.cos(deg) * dist);
+            this.initY = this.y = y ?? (300 + Math.sin(deg) * dist);
+            this.canvas = canvas;
+        }
+
+        repulse() {
+            const diffX = this.x - this.canvas.mouseX;
+            const diffY = this.y - this.canvas.mouseY;
+            const mouseDistance = diffX ** 2 + diffY ** 2;
+            const mouseRad = Math.atan2(diffY, diffX);
+
+            const repulsiveForce = Math.min(10, Math.round((Dot.repulsePower / mouseDistance) * 100) / 100);
+            this.accelX = Math.min(Math.max(this.accelX + repulsiveForce * Math.cos(mouseRad), -10), 10);
+            this.accelY = Math.min(Math.max(this.accelY + repulsiveForce * Math.sin(mouseRad), -10), 10);
+        }
+
+        animate() {
+
+            this.x += this.accelX;
+            this.y += this.accelY;
+
+            const initDiffX = this.x - this.initX;
+            const initDiffY = this.y - this.initY;
+
+            this.x -= initDiffX / 5;
+            this.y -= initDiffY / 5;
+
+            this.accelX = 0;
+            this.accelY = 0;
+            this.repulse();
+        }
+    }
+
+    class DotCanvas {
+        static friction = 1;
+        canvasRef;
+        ctx;
+
+        dots;
+        mouseX = -9999;
+        mouseY = -9999;
+
+        constructor(dotCount) {
+            this.dots = Array(dotCount)
+                .fill(0)
+                .map((v, i) => new Dot(this));
+        }
+
+        mountCanvas(canvas) {
+            this.canvasRef = canvas;
+        }
+
+        handleMoveMouse = (e) => {
+            const {x, y} = e.currentTarget.getBoundingClientRect();
+            this.mouseX = e.clientX - x;
+            this.mouseY = e.clientY - y;
+        };
+
+        handleMouseOut = () => {
+            this.mouseX = -9999;
+            this.mouseY = -9999;
+        };
+    }
+
+    window.onload = () => {
+        const canvas = document.getElementById('canvas');
+        const dotCanvas = new DotCanvas(2000);
+        const {dots, handleMoveMouse, handleMouseOut} = dotCanvas;
+        canvas.addEventListener('mousemove', handleMoveMouse);
+        canvas.addEventListener('mouseout', handleMouseOut);
+
+        const ctx = canvas.getContext('2d');
+        const animate = () => {
+            canvas.height = 600;
+            dots.forEach((dot) => {
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = dot.color;
+                ctx.fill();
+
+                dot.animate();
+            });
+
+            requestAnimationFrame(animate);
+        };
+        animate();
+    }
+</script>
+</html>
